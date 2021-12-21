@@ -10,7 +10,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -35,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_lista_notas);
+        setTitle("Notas");
 
         List<Nota> todasNotas = pegaTodasNotas();
         configuraRecyclerView(todasNotas);
@@ -55,7 +55,12 @@ public class MainActivity extends AppCompatActivity {
         adapter.setOnItemClickListener((nota, posicao) -> {
             vaiParaFormularioNotaActivityAltera(nota, posicao);
         });
-        new ItemTouchHelper(new NotaItemTouchHelperCallback);
+        configuraItemTouchHelper();
+    }
+
+    private void configuraItemTouchHelper() {
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new NotaItemTouchHelperCallback(adapter));
+        itemTouchHelper.attachToRecyclerView(recyclerView);
     }
 
     private void vaiParaFormularioNotaActivityAltera(Nota nota, int posicao) {
@@ -67,29 +72,24 @@ public class MainActivity extends AppCompatActivity {
 
     private List<Nota> pegaTodasNotas() {
         NotaDAO dao = new NotaDAO();
-        for (int i = 0; i < 10; i++) {
-            dao.insere(new Nota("Título " + i, "Descrição " + i));
-        }
         return dao.todos();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        if (requestCode == CODIGO_REQUISICAO_INSERE_NOTA && data.hasExtra(CHAVE_NOTA)) {
+        if (requestCode == CODIGO_REQUISICAO_INSERE_NOTA && data != null && data.hasExtra(CHAVE_NOTA)) {
             if (resultCode == Activity.RESULT_OK) {
                 Nota notaRecebida = (Nota) data.getSerializableExtra(CHAVE_NOTA);
                 adapter.adiciona(notaRecebida);
             }
         }
 
-        if (requestCode == CODIGO_REQUISICAO_ALTERA_NOTA && data.hasExtra(CHAVE_NOTA)) {
+        if (requestCode == CODIGO_REQUISICAO_ALTERA_NOTA && data != null && data.hasExtra(CHAVE_NOTA)) {
             if (resultCode == Activity.RESULT_OK) {
                 Nota notaRecebida = (Nota) data.getSerializableExtra(CHAVE_NOTA);
                 int posicaoRecebida = data.getIntExtra(CHAVE_POSICAO, POSICAO_INVALIDA);
                 if (posicaoRecebida > POSICAO_INVALIDA) {
                     adapter.altera(posicaoRecebida, notaRecebida);
-                } else {
-                    Toast.makeText(this, "Ocorreu um problema na alteração da nota", Toast.LENGTH_SHORT).show();
                 }
             }
         }
